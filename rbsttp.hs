@@ -9,10 +9,12 @@ data Note =
     | Cagain
     deriving (Show, Enum)
 
--- Play a note with a given gain relative to max volume, asynchronously.
+-- Play a note with a given gain relative to max volume (this should be
+-- negative), asynchronously.
 playNote :: Int -> Note -> IO ()
 playNote g n = void $ createProcess $ shell $
-    "sox -n -d --no-show-progress synth 0.3 pluck " ++ show (f n) ++ " gain " ++ show g
+    "sox -n -d --no-show-progress synth 0.3 pluck " ++ show (f n) ++ " gain "
+    ++ show g
     where
     f :: Note -> Double
     f n = 261.626 * (2 ** ((fromIntegral $ fromEnum n)/12))
