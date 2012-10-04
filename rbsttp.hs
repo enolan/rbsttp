@@ -6,7 +6,6 @@ import System.Process
 -- 12 note chromatic scale starting at middle C.
 data Note =
     C | Csharp | D | Dsharp | E | F | Fsharp | G | Gsharp | A | Asharp | B
-    | Cagain
     deriving (Show, Enum)
 
 -- Play a note with a given gain relative to max volume (this should be
