@@ -1,6 +1,9 @@
+{-# LANGUAGE RankNTypes #-}
 import Control.Concurrent
 import Control.Monad
 import Data.List
+import Reactive.Banana
+import Reactive.Banana.Frameworks
 import System.Process
 
 -- 12 note chromatic scale starting at middle C.
@@ -17,3 +20,14 @@ playNote g n = void $ createProcess $ shell $
     where
     f :: Note -> Double
     f n = 261.626 * (2 ** ((fromIntegral $ fromEnum n)/12))
+
+go1 :: IO ((Int, Note) -> IO (), EventNetwork)
+go1 = do
+    (addH, sendNoteEvent) <- newAddHandler
+    let networkDescription :: forall t. Frameworks t => Moment t ()
+        networkDescription = do
+            noteEvent <- fromAddHandler addH
+            reactimate $ fmap (uncurry playNote) noteEvent
+    network <- compile networkDescription
+    actuate network
+    return (sendNoteEvent, network)
