@@ -31,3 +31,26 @@ go1 = do
     network <- compile networkDescription
     actuate network
     return (sendNoteEvent, network)
+
+addHandlerFromThread :: (Chan a -> IO ()) -> AddHandler a
+addHandlerFromThread writerThread handler = do
+    chan <- newChan
+    tId1 <- forkIO (writerThread chan)
+    tId2 <- forkIO $ forever $ (readChan chan >>= handler)
+    return (killThread tId1 >> killThread tId2)
+
+bpmToAddHandler :: Int -> AddHandler ()
+bpmToAddHandler x = addHandlerFromThread go
+    where go chan = forever $ writeChan chan () >> threadDelay microsecs
+          microsecs :: Int
+          microsecs = round $ (1/(fromIntegral x) * 60 * 1000000)
+
+goBpm :: Int -> IO EventNetwork
+goBpm bpm = do
+    let networkDescription :: forall t. Frameworks t => Moment t ()
+        networkDescription = do
+            tickEvent <- fromAddHandler (bpmToAddHandler bpm)
+            reactimate $ fmap (const $ playNote (negate 5) Fsharp) tickEvent
+    network <- compile networkDescription
+    actuate network
+    return network
