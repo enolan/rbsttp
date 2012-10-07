@@ -107,6 +107,7 @@ scales bpm = do
             let idxDscE = negate <$> idxAscE
                 notesAscE = (toEnum . ((`mod` 12))) . fromEnum <$> idxAscE
                 notesDscE = (toEnum . ((`mod` 12))) . fromEnum <$> idxDscE
+            -- Reactive.Banana.union clashes with Prelude.union, hence RB.union
             reactimate $ fmap (uncurry playNote . (negate 5,)) $ RB.union notesAscE notesDscE
     network <- compile networkDescription
     actuate network
