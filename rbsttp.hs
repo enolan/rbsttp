@@ -2,7 +2,7 @@
 import Control.Concurrent
 import Control.Monad
 import Data.List
-import Reactive.Banana
+import Reactive.Banana as RB
 import Reactive.Banana.Frameworks
 import System.Process
 
@@ -74,7 +74,7 @@ goBpmChord bpm = do
     actuate network
     return network
 
-counterify :: Event t () -> Event t Integer
+counterify :: Event t () -> Event t Int
 counterify ev = accumE 0 (const (+1) <$> ev)
 
 justCount :: IO EventNetwork
@@ -84,6 +84,30 @@ justCount = do
             beats <- fromAddHandler (bpmToAddHandler 60)
             let counting = counterify beats
             reactimate $ fmap print counting
+    network <- compile networkDescription
+    actuate network
+    return network
+
+scale :: Int -> IO EventNetwork
+scale bpm = do
+    let networkDescription :: forall t. Frameworks t => Moment t ()
+        networkDescription = do
+            idxE <- counterify <$> fromAddHandler (bpmToAddHandler bpm)
+            let notesE = (toEnum . ((`mod` 12))) . fromEnum <$> idxE
+            reactimate $ fmap (uncurry playNote . (negate 5,)) notesE
+    network <- compile networkDescription
+    actuate network
+    return network
+
+scales :: Int -> IO EventNetwork
+scales bpm = do
+    let networkDescription :: forall t. Frameworks t => Moment t ()
+        networkDescription = do
+            idxAscE <- counterify <$> fromAddHandler (bpmToAddHandler bpm)
+            let idxDscE = negate <$> idxAscE
+                notesAscE = (toEnum . ((`mod` 12))) . fromEnum <$> idxAscE
+                notesDscE = (toEnum . ((`mod` 12))) . fromEnum <$> idxDscE
+            reactimate $ fmap (uncurry playNote . (negate 5,)) $ RB.union notesAscE notesDscE
     network <- compile networkDescription
     actuate network
     return network
