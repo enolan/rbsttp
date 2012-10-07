@@ -73,3 +73,17 @@ goBpmChord bpm = do
     network <- compile networkDescription
     actuate network
     return network
+
+counterify :: Event t () -> Event t Integer
+counterify ev = accumE 0 (const (+1) <$> ev)
+
+justCount :: IO EventNetwork
+justCount = do
+    let networkDescription :: forall t. Frameworks t => Moment t ()
+        networkDescription = do
+            beats <- fromAddHandler (bpmToAddHandler 60)
+            let counting = counterify beats
+            reactimate $ fmap print counting
+    network <- compile networkDescription
+    actuate network
+    return network
