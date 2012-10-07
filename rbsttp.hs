@@ -1,4 +1,4 @@
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RankNTypes, TupleSections #-}
 import Control.Concurrent
 import Control.Monad
 import Data.List
@@ -51,6 +51,25 @@ goBpm bpm = do
         networkDescription = do
             tickEvent <- fromAddHandler (bpmToAddHandler bpm)
             reactimate $ fmap (const $ playNote (negate 5) Fsharp) tickEvent
+    network <- compile networkDescription
+    actuate network
+    return network
+
+-- The last two will sound ugly, but whatever I'm not an actual musician and
+-- this is a tutorial.
+chordify :: Note -> [Note]
+chordify n = let n' = fromEnum n in map (toEnum . (`mod` 12)) [n', n'+1, n'+2]
+
+chordify' :: Event t Note -> Event t Note
+chordify' = spill . fmap chordify
+
+goBpmChord :: Int -> IO EventNetwork
+goBpmChord bpm = do
+    let networkDescription :: forall t. Frameworks t => Moment t ()
+        networkDescription = do
+            tickEvent <- fromAddHandler (bpmToAddHandler bpm)
+            let noteEvent = chordify' $ fmap (const C) tickEvent
+            reactimate $ fmap (uncurry playNote . (negate 5,)) noteEvent
     network <- compile networkDescription
     actuate network
     return network
